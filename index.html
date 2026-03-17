@@ -1,6 +1,274 @@
-// --- (中略：スタイルやボタンの定義はそのまま) ---
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>音声録音アプリ (MP3対応)</title>
+  <style>
+    * { box-sizing: border-box; }
+   
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+   
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      max-width: 550px;
+      margin: auto;
+      animation: slideIn 0.5s ease-out;
+    }
+   
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+   
+    h1 {
+      color: #667eea;
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 28px;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+   
+    .input-group {
+      margin-bottom: 20px;
+    }
+   
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+   
+    .input-group select,
+    .input-group input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+    }
+   
+    .input-group select:focus,
+    .input-group input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
 
-<script>
+    .input-group select {
+      cursor: pointer;
+    }
+   
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+   
+    button {
+      flex: 1;
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+   
+    button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+   
+    button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+   
+    button span {
+      position: relative;
+      z-index: 1;
+    }
+   
+    #recordButton {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+   
+    #recordButton:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+    }
+   
+    #stopButton {
+      background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    }
+   
+    #stopButton:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(238, 9, 121, 0.4);
+    }
+   
+    #saveButton {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      width: 100%;
+    }
+   
+    #saveButton:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+   
+    button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none;
+    }
+   
+    button:disabled::before {
+      display: none;
+    }
+   
+    #status {
+      margin-top: 20px;
+      padding: 15px;
+      background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+      border-radius: 12px;
+      text-align: center;
+      font-weight: 600;
+      color: #333;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      animation: fadeIn 0.5s ease-in;
+    }
+   
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+   
+    .recording {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+   
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+   
+    .success {
+      background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+      color: white;
+    }
+   
+    #audioPlayback {
+      width: 100%;
+      margin-top: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+   
+    #downloadLink {
+      display: block;
+      margin-top: 15px;
+      text-align: center;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(102, 126, 234, 0.1);
+      transition: all 0.3s ease;
+    }
+   
+    #downloadLink:hover {
+      background: rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️ 音声録音アプリ</h1>
+
+    <div class="input-group">
+      <label for="groupSelect">👥 グループを選択:</label>
+      <select id="groupSelect">
+        <option value="">-- グループを選択してください --</option>
+        <option value="1">グループ1</option>
+        <option value="2">グループ2</option>
+        <option value="3">グループ3</option>
+        <option value="4">グループ4</option>
+        <option value="5">グループ5</option>
+        <option value="6">グループ6</option>
+        <option value="7">グループ7</option>
+        <option value="8">グループ8</option>
+        <option value="9">グループ9</option>
+        <option value="10">グループ10</option>
+        <option value="11">グループ11</option>
+        <option value="12">グループ12</option>
+        <option value="13">グループ13</option>
+        <option value="14">グループ14</option>
+        <option value="15">グループ15</option>
+        <option value="16">グループ16</option>
+        <option value="17">グループ17</option>
+        <option value="18">グループ18</option>
+        <option value="19">グループ19</option>
+        <option value="20">グループ20</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="nicknameInput">✨ ニックネーム:</label>
+      <input type="text" id="nicknameInput" placeholder="例: たぬき、山田太郎">
+    </div>
+
+    <div class="button-group">
+      <button id="recordButton"><span>🔴 録音開始</span></button>
+      <button id="stopButton" disabled><span>⏹️ 停止</span></button>
+    </div>
+   
+    <button id="saveButton" disabled><span>💾 MP3でドライブに保存</span></button>
+
+    <div id="status">マイクへのアクセスを許可してください 🎤</div>
+    <audio id="audioPlayback" controls hidden></audio>
+    <a id="downloadLink" style="display:none;">⬇️ エンコードされたMP3をダウンロード (デバッグ用)</a>
+  </div>
+
+  <script>
     const recordButton = document.getElementById('recordButton');
     const stopButton = document.getElementById('stopButton');
     const saveButton = document.getElementById('saveButton');
@@ -10,7 +278,8 @@
     const groupSelect = document.getElementById('groupSelect');
     const nicknameInput = document.getElementById('nicknameInput');
 
-    // ★重要：ここにGASでデプロイした「ウェブアプリのURL」を貼り付けてください
+    // ★★★ 重要 ★★★
+    // 以下の URL を、GASでデプロイして発行された「ウェブアプリのURL」に書き換えてください。
     const API_URL = "https://script.google.com/macros/s/AKfycbzfDXSuDfAv1JMlhiLoEncQRrWALyUDb99zkjeBnNoutWEyHhrG3wQL4EiSFkhOvFAAMQ/exec";
 
     let mediaRecorder;
@@ -18,13 +287,85 @@
     let originalAudioBlob = null;
     let stream = null;
 
-    // --- (録音開始・停止の処理は変更なし) ---
-    // ... (recordButton.onclick, stopButton.onclick 等) ...
+    recordButton.onclick = async () => {
+      const groupValue = groupSelect.value.trim();
+      const nicknameValue = nicknameInput.value.trim();
 
-    // ★修正箇所：saveButton.onclick
+      if (!groupValue) {
+        statusDisplay.textContent = '⚠️ グループを選択してください。';
+        statusDisplay.className = '';
+        return;
+      }
+
+      if (!nicknameValue) {
+        statusDisplay.textContent = '⚠️ ニックネームを入力してください。';
+        statusDisplay.className = '';
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const options = { mimeType: 'audio/webm;codecs=opus' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            console.log(options.mimeType + ' is not supported, using default (likely audio/webm).');
+            delete options.mimeType;
+        }
+        mediaRecorder = new MediaRecorder(stream, options);
+
+        mediaRecorder.ondataavailable = event => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          originalAudioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+          const audioUrl = URL.createObjectURL(originalAudioBlob);
+          audioPlayback.src = audioUrl;
+          audioPlayback.hidden = false;
+
+          recordButton.disabled = false;
+          stopButton.disabled = true;
+          saveButton.disabled = false;
+          statusDisplay.textContent = '✅ 録音停止。再生またはMP3で保存が可能です。';
+          statusDisplay.className = 'success';
+          audioChunks = [];
+          downloadLink.style.display = 'none';
+        };
+
+        audioChunks = [];
+        mediaRecorder.start();
+        statusDisplay.textContent = '🎤 録音中... お話しください！';
+        statusDisplay.className = 'recording';
+        recordButton.disabled = true;
+        stopButton.disabled = false;
+        saveButton.disabled = true;
+        groupSelect.disabled = true;
+        nicknameInput.disabled = true;
+        audioPlayback.hidden = true;
+        audioPlayback.src = '';
+
+      } catch (err) {
+        console.error("マイクアクセスエラー:", err);
+        statusDisplay.textContent = '❌ エラー: マイクにアクセスできませんでした。ブラウザの設定を確認してください。';
+        statusDisplay.className = '';
+      }
+    };
+
+    stopButton.onclick = () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          stream = null;
+        }
+        groupSelect.disabled = false;
+        nicknameInput.disabled = false;
+      }
+    };
+
     saveButton.onclick = async () => {
       if (!originalAudioBlob) {
         statusDisplay.textContent = '⚠️ 保存する録音データがありません。';
+        statusDisplay.className = '';
         return;
       }
 
@@ -33,47 +374,58 @@
 
       if (!groupValue || !nicknameValue) {
         statusDisplay.textContent = '⚠️ グループとニックネームを入力してください。';
+        statusDisplay.className = '';
         return;
       }
 
-      statusDisplay.textContent = '⏳ MP3にエンコード中...';
+      statusDisplay.textContent = '⏳ MP3にエンコード中... しばらくお待ちください。';
+      statusDisplay.className = '';
       saveButton.disabled = true;
       recordButton.disabled = true;
+      groupSelect.disabled = true;
+      nicknameInput.disabled = true;
+      downloadLink.style.display = 'none';
 
       try {
         const mp3Blob = await encodeToMp3(originalAudioBlob);
         
-        statusDisplay.textContent = '📤 API経由でドライブに保存中...';
+        // デバッグ用ダウンロードリンクの設定
+        const mp3Url = URL.createObjectURL(mp3Blob);
+        downloadLink.href = mp3Url;
+        const debugTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const safeNickname = nicknameValue.replace(/[\s\\\/:\*\?"<>\|]/g, '_');
+        const debugPrefix = `グループ${groupValue}_${safeNickname}`;
+        downloadLink.download = `${debugPrefix}_debug_recording-${debugTimestamp}.mp3`;
+        downloadLink.style.display = 'block';
+        
+        statusDisplay.textContent = '📤 エンコード完了。API経由でドライブに保存中...';
 
         const reader = new FileReader();
         reader.onloadend = async () => {
-          const audioDataUrl = reader.result; // Base64データ
+          const audioDataUrl = reader.result;
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const safeNickname = nicknameValue.replace(/[\s\\\/:\*\?"<>\|]/g, '_');
           const baseFileName = `グループ${groupValue}_${safeNickname}_recording-${timestamp}`;
 
-          // --- API送信処理 ---
           const payload = {
             audioDataUrl: audioDataUrl,
             baseFileName: baseFileName
           };
 
           try {
-            const response = await fetch(API_URL, {
+            await fetch(API_URL, {
               method: "POST",
-              mode: "no-cors", // GASへのクロスドメイン送信でよく使われる設定
+              mode: "no-cors",
               body: JSON.stringify(payload)
             });
 
-            // mode: "no-cors" の場合、レスポンスの中身は読めませんが、
-            // 送信自体が成功すればここに来ます。
-            statusDisplay.textContent = '🎉 送信完了！(ドライブを確認してください)';
+            statusDisplay.textContent = '🎉 送信完了！(ドライブと履歴シートを確認してください)';
             statusDisplay.className = 'success';
-
           } catch (fetchError) {
             console.error('Fetch Error:', fetchError);
-            statusDisplay.textContent = `❌ 送信エラーが発生しました。`;
+            statusDisplay.textContent = `❌ 送信エラーが発生しました。コンソールを確認してください。`;
+            statusDisplay.className = '';
           } finally {
+            saveButton.disabled = true; // 送信後は再度録音するまで無効化
             recordButton.disabled = false;
             groupSelect.disabled = false;
             nicknameInput.disabled = false;
@@ -81,14 +433,69 @@
         };
         reader.readAsDataURL(mp3Blob);
       } catch (error) {
-        console.error("エラー:", error);
-        statusDisplay.textContent = `❌ エラー: ${error.message}`;
+        console.error("MP3エンコードエラー:", error);
+        statusDisplay.textContent = `❌ MP3エンコードエラー: ${error.message}`;
+        statusDisplay.className = '';
         saveButton.disabled = false;
+        recordButton.disabled = false;
+        groupSelect.disabled = false;
+        nicknameInput.disabled = false;
       }
     };
 
-    // --- (encodeToMp3関数はそのまま) ---
     async function encodeToMp3(audioBlob) {
-      // ... (既存のコード) ...
+        console.log("Starting MP3 encoding for blob type:", audioBlob.type, "size:", audioBlob.size);
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer).catch(e => {
+            console.error("decodeAudioData error:", e);
+            throw new Error("音声データのデコードに失敗しました。録音形式に問題がある可能性があります。 " + e.message);
+        });
+        const numChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const kbps = 128;
+        console.log(`Audio properties: Channels: ${numChannels}, Sample Rate: ${sampleRate} Hz`);
+        const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps);
+        const mp3Data = [];
+        const pcmData = [];
+        for (let i = 0; i < numChannels; i++) {
+            pcmData.push(audioBuffer.getChannelData(i));
+        }
+        const samplesLeft = new Int16Array(pcmData[0].length);
+        for (let i = 0; i < pcmData[0].length; i++) {
+            samplesLeft[i] = Math.max(-1, Math.min(1, pcmData[0][i])) * 32767;
+        }
+        let samplesRight = null;
+        if (numChannels > 1) {
+            samplesRight = new Int16Array(pcmData[1].length);
+            for (let i = 0; i < pcmData[1].length; i++) {
+                samplesRight[i] = Math.max(-1, Math.min(1, pcmData[1][i])) * 32767;
+            }
+        }
+        const blockSize = 1152;
+        let dataBuffer;
+        for (let i = 0; i < samplesLeft.length; i += blockSize) {
+            const leftChunk = samplesLeft.subarray(i, i + blockSize);
+            let rightChunk = null;
+            if (samplesRight) {
+                rightChunk = samplesRight.subarray(i, i + blockSize);
+            }
+            if (numChannels === 1) {
+                dataBuffer = mp3encoder.encodeBuffer(leftChunk);
+            } else {
+                dataBuffer = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+            }
+            if (dataBuffer.length > 0) {
+                mp3Data.push(dataBuffer);
+            }
+        }
+        dataBuffer = mp3encoder.flush();
+        if (dataBuffer.length > 0) {
+            mp3Data.push(dataBuffer);
+        }
+        console.log("MP3 encoding finished. MP3 data chunks:", mp3Data.length);
+        return new Blob(mp3Data, { type: 'audio/mpeg' });
     }
-</script>
+  </script>
+</body>
+</html>
